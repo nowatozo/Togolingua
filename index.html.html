@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0D2137">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>TogoLingua 🌍</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F4F8; color: #1C2833; }
+.header { background: #0D2137; padding: 13px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.header-icon { font-size: 24px; }
+.header-title { color: #fff; font-size: 18px; font-weight: 700; }
+.header-sub { color: #0D9488; font-size: 10px; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #E2E8F0; display: flex; z-index: 100; height: 56px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8; font-size: 10px; gap: 1px; }
+.nav-item.active { color: #0D9488; }
+.nav-icon { font-size: 20px; }
+.page { display: none; padding-bottom: 66px; }
+.page.active { display: block; }
+
+/* ── SHARED ── */
+.section-bar { background: #0D2137; padding: 10px 14px 12px; }
+.section-bar-title { color: #9ECFCA; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.lang-select-row { display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding-bottom: 2px; }
+.lang-select-row::-webkit-scrollbar { display: none; }
+.lang-pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: 14px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #1A3A55; color: #94A3B8; background: transparent; white-space: nowrap; }
+.lang-pill.active { background: #0D9488; border-color: #0D9488; color: #fff; }
+.card { background: #fff; border-radius: 13px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+.lbl { font-size: 10px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+.val { font-size: 15px; color: #1C2833; font-weight: 500; margin-bottom: 12px; }
+.ton-badge { display: inline-block; background: #FFF7ED; color: #F59E0B; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+.empty-state { text-align: center; padding: 50px 20px; color: #94A3B8; font-size: 14px; }
+.empty-ico { font-size: 40px; margin-bottom: 8px; }
+
+/* ── DICO ── */
+.search-wrap { background: #0D2137; padding: 0 14px 12px; position: relative; }
+.search-ico { position: absolute; left: 26px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
+.search-input { width: 100%; padding: 9px 12px 9px 34px; border-radius: 20px; border: none; background: #1A3A55; color: #fff; font-size: 14px; outline: none; }
+.search-input::placeholder { color: #4A6B85; }
+.themes-row { background: #0D2137; padding: 0 12px 12px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.themes-row::-webkit-scrollbar { display: none; }
+.t-chip { display: inline-block; padding: 4px 11px; border-radius: 12px; font-size: 11px; margin-right: 4px; cursor: pointer; border: 1px solid #1A3A55; color: #94A3B8; background: transparent; }
+.t-chip.active { background: #0D9488; border-color: #0D9488; color: #fff; font-weight: 600; }
+.stats-row { background: #fff; padding: 6px 14px; font-size: 11px; color: #94A3B8; border-bottom: 1px solid #F1F5F9; }
+.stats-row b { color: #0D9488; }
+.word-list { padding: 8px 12px; }
+.word-card { background: #fff; border-radius: 11px; padding: 12px 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-left: 3px solid #0D9488; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.word-card:active { transform: scale(.98); }
+.wc-main { flex: 1; min-width: 0; }
+.wc-word { font-size: 16px; font-weight: 700; color: #0D2137; }
+.wc-tr { font-size: 12px; color: #64748B; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-badge { font-size: 10px; padding: 2px 7px; border-radius: 7px; background: #E6FAF8; color: #0D9488; font-weight: 600; flex-shrink: 0; }
+.wc-arr { color: #CBD5E1; font-size: 16px; margin-left: 3px; }
+
+/* ── OVERLAY (detail) ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: flex-end; }
+.overlay.open { display: flex; }
+.sheet { background: #fff; border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp .2s ease; padding-bottom: 30px; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-handle { width: 34px; height: 4px; background: #CBD5E1; border-radius: 2px; margin: 11px auto 0; }
+.sheet-hdr { padding: 13px 18px 11px; border-bottom: 1px solid #F1F5F9; position: relative; }
+.sheet-word { font-size: 28px; font-weight: 800; color: #0D2137; }
+.sheet-meta { font-size: 11px; color: #0D9488; font-weight: 600; margin-top: 2px; }
+.sheet-close { position: absolute; right: 14px; top: 14px; background: #F1F5F9; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 14px; cursor: pointer; }
+.sheet-body { padding: 13px 18px; }
+.lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+.lang-cell { background: #F8FAFC; border-radius: 8px; padding: 8px 10px; }
+.lang-cell .lbl { margin-bottom: 2px; }
+.lang-cell .val { font-size: 14px; margin-bottom: 0; }
+
+/* ── TRADUCTION ── */
+.trad-page { padding: 0 0 66px; }
+.trad-lang-bar { background: #0D2137; padding: 10px 14px; }
+.trad-lang-row { display: flex; align-items: center; gap: 8px; }
+.trad-lang-box { flex: 1; background: #1A3A55; border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+.tl-label { font-size: 9px; color: #64748B; text-transform: uppercase; font-weight: 700; }
+.tl-val { font-size: 13px; color: #fff; font-weight: 700; }
+.trad-swap { background: #0D9488; border: none; border-radius: 50%; width: 34px; height: 34px; font-size: 16px; cursor: pointer; flex-shrink: 0; color: #fff; display: flex; align-items: center; justify-content: center; }
+.trad-body { padding: 12px 14px; }
+.trad-input { width: 100%; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 12px; font-size: 16px; outline: none; min-height: 80px; resize: none; font-family: inherit; background: #F8FAFC; }
+.trad-input:focus { border-color: #0D9488; background: #fff; }
+.trad-btn { width: 100%; background: #0D9488; color: #fff; border: none; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+.result-box { background: #E6FAF8; border-radius: 10px; padding: 13px; margin-top: 10px; display: none; border-left: 3px solid #0D9488; }
+.result-word { font-size: 22px; font-weight: 800; color: #0D2137; }
+.result-sub { font-size: 12px; color: #64748B; margin-top: 3px; }
+.result-ton { font-size: 11px; color: #0D9488; margin-top: 3px; font-weight: 600; }
+.no-result { background: #FFF7ED; border-left-color: #F59E0B; }
+.trad-tip { font-size: 11px; color: #94A3B8; text-align: center; margin-top: 8px; line-height: 1.5; }
+.lang-picker-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; align-items: flex-end; }
+.lang-picker-overlay.open { display: flex; }
+.lang-picker-sheet { background: #fff; border-radius: 20px 20px 0 0; width: 100%; max-height: 70vh; overflow-y: auto; padding-bottom: 30px; animation: slideUp .2s ease; }
+.lp-hdr { padding: 12px 16px; border-bottom: 1px solid #F1F5F9; display: flex; align-items: center; justify-content: space-between; }
+.lp-title { font-size: 15px; font-weight: 700; color: #0D2137; }
+.lp-close { background: #F1F5F9; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 14px; cursor: pointer; }
+.lp-item { padding: 12px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 0.5px solid #F1F5F9; }
+.lp-item:active { background: #F8FAFC; }
+.lp-flag { font-size: 20px; }
+.lp-name { font-size: 14px; font-weight: 600; color: #0D2137; }
+.lp-family { font-size: 11px; color: #94A3B8; }
+.lp-item.selected .lp-name { color: #0D9488; }
+.lp-check { margin-left: auto; color: #0D9488; font-size: 16px; display: none; }
+.lp-item.selected .lp-check { display: block; }
+
+/* ── APPRENTISSAGE ── */
+.learn-page { padding: 12px 13px 66px; }
+.learn-hdr { background: #0D2137; border-radius: 13px; padding: 15px; margin-bottom: 12px; border: 1px solid #0D9488; }
+.learn-title { font-size: 17px; font-weight: 700; color: #fff; }
+.learn-sub { font-size: 11px; color: #9ECFCA; margin-top: 2px; }
+.xp-wrap { margin-top: 9px; }
+.xp-lbl { display: flex; justify-content: space-between; font-size: 10px; color: #9ECFCA; margin-bottom: 3px; }
+.xp-bar { height: 5px; background: rgba(255,255,255,.2); border-radius: 3px; }
+.xp-fill { height: 5px; background: #F59E0B; border-radius: 3px; transition: width .4s; }
+.sec-title { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: .7px; margin: 12px 0 7px; }
+.lesson-pick { display: flex; gap: 7px; overflow-x: auto; white-space: nowrap; margin-bottom: 4px; scrollbar-width: none; padding-bottom: 4px; }
+.lesson-pick::-webkit-scrollbar { display: none; }
+.lesson-pill { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #E2E8F0; background: #fff; color: #64748B; white-space: nowrap; }
+.lesson-pill.active { background: #0D2137; color: #fff; border-color: #0D2137; }
+.lesson-cards-wrap { }
+.lesson-card-item { background: #fff; border-radius: 11px; padding: 13px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.lc-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.lc-num { font-size: 10px; color: #94A3B8; font-weight: 700; }
+.lc-theme-badge { font-size: 10px; padding: 2px 7px; border-radius: 7px; background: #E6FAF8; color: #0D9488; font-weight: 600; }
+.lc-word { font-size: 26px; font-weight: 800; color: #0D2137; margin-bottom: 4px; }
+.lc-tr { font-size: 15px; color: #0D9488; font-weight: 600; margin-bottom: 4px; }
+.lc-ton { font-size: 11px; color: #F59E0B; margin-bottom: 4px; }
+.lc-note { font-size: 12px; color: #64748B; line-height: 1.5; }
+.lc-lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.lc-lang-cell { background: #F8FAFC; border-radius: 7px; padding: 6px 8px; }
+.lc-lang-lbl { font-size: 9px; color: #94A3B8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+.lc-lang-val { font-size: 13px; color: #1C2833; font-weight: 600; }
+.lesson-nav { display: flex; gap: 8px; margin-top: 10px; }
+.lesson-btn { flex: 1; padding: 11px; border-radius: 9px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+.lesson-btn.prev { background: #F1F5F9; color: #64748B; }
+.lesson-btn.next { background: #0D9488; color: #fff; }
+.lesson-progress { display: flex; justify-content: center; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+.l-dot { width: 6px; height: 6px; border-radius: 50%; background: #E2E8F0; }
+.l-dot.done { background: #0D9488; }
+.l-dot.cur { background: #F59E0B; }
+/* QUIZ */
+.quiz-wrap { }
+.quiz-card { background: #fff; border-radius: 13px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+.quiz-counter { font-size: 11px; color: #94A3B8; text-align: right; margin-bottom: 10px; }
+.quiz-q { font-size: 15px; font-weight: 700; color: #0D2137; text-align: center; margin-bottom: 14px; }
+.quiz-q-word { font-size: 28px; font-weight: 800; color: #0D9488; display: block; margin-bottom: 4px; }
+.quiz-q-lang { font-size: 11px; color: #94A3B8; }
+.quiz-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.quiz-opt { padding: 12px 8px; border-radius: 9px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; color: #1C2833; }
+.quiz-opt:active { transform: scale(.97); }
+.quiz-opt.correct { background: #E6FAF8; border-color: #0D9488; color: #0D9488; }
+.quiz-opt.wrong { background: #FEE2E2; border-color: #EF4444; color: #EF4444; }
+.quiz-opt.disabled { pointer-events: none; }
+.quiz-fb { text-align: center; padding: 10px; border-radius: 9px; margin-top: 10px; font-size: 13px; font-weight: 700; display: none; }
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { background: #E6FAF8; color: #0D9488; }
+.quiz-fb.ko { background: #FEE2E2; color: #EF4444; }
+.quiz-next { width: 100%; background: #0D2137; color: #fff; border: none; border-radius: 9px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 9px; display: none; }
+.quiz-next.show { display: block; }
+.quiz-score { text-align: center; padding: 24px 16px; }
+.quiz-score-ico { font-size: 48px; margin-bottom: 8px; }
+.quiz-score-num { font-size: 36px; font-weight: 800; color: #0D9488; }
+.quiz-score-lbl { font-size: 13px; color: #64748B; margin-top: 4px; }
+.quiz-restart { background: #0D9488; color: #fff; border: none; border-radius: 9px; padding: 12px 26px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🌍</div>
+  <div><div class="header-title">TogoLingua</div><div class="header-sub">Traduire · Apprendre · Préserver</div></div>
+</div>
+
+<!-- ══════════════════════ DICTIONNAIRE ══════════════════════ -->
+<div class="page active" id="pageDico">
+  <div class="section-bar">
+    <div class="section-bar-title">Langue de recherche</div>
+    <div class="lang-select-row" id="dicoLangRow"></div>
+  </div>
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Chercher un mot..." oninput="filterWords()">
+  </div>
+  <div class="themes-row" id="themesRow"></div>
+  <div class="stats-row" id="statsRow"></div>
+  <div class="word-list" id="wordList"></div>
+</div>
+
+<!-- ══════════════════════ TRADUCTION ══════════════════════ -->
+<div class="page" id="pageTrad">
+  <div class="trad-page">
+    <div class="trad-lang-bar">
+      <div class="trad-lang-row">
+        <div class="trad-lang-box" onclick="openLangPicker('from')">
+          <div class="tl-label">De</div>
+          <div class="tl-val" id="tradFromVal">🇫🇷 Français</div>
+        </div>
+        <button class="trad-swap" onclick="swapLangs()">⇄</button>
+        <div class="trad-lang-box" onclick="openLangPicker('to')">
+          <div class="tl-label">Vers</div>
+          <div class="tl-val" id="tradToVal">Ewe 🌍</div>
+        </div>
+      </div>
+    </div>
+    <div class="trad-body">
+      <textarea class="trad-input" id="tradInput" placeholder="Saisissez un mot..."></textarea>
+      <button class="trad-btn" onclick="doTranslate()">Traduire →</button>
+      <div class="result-box" id="resultBox">
+        <div class="result-word" id="resultWord"></div>
+        <div class="result-sub" id="resultSub"></div>
+        <div class="result-ton" id="resultTon"></div>
+      </div>
+      <div class="trad-tip">💡 Tapez un mot simple. La traduction recherche dans notre base de 100 mots.</div>
+    </div>
+    <div style="padding:0 14px">
+      <div class="card">
+        <div class="lbl">🚨 Urgences rapides — cliquez pour traduire</div>
+        <div id="urgList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ APPRENTISSAGE ══════════════════════ -->
+<div class="page" id="pageLearn">
+  <div class="learn-page">
+    <div class="learn-hdr">
+      <div class="learn-title">🎓 Apprendre les langues togolaises</div>
+      <div class="learn-sub">Choisissez une langue · Lisez les leçons · Testez-vous</div>
+      <div class="xp-wrap">
+        <div class="xp-lbl"><span>Progression</span><span id="xpLabel">0 XP</span></div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">🌍 Langue à apprendre</div>
+    <div class="lesson-pick" id="learnLangPick"></div>
+
+    <div class="sec-title">📚 Thème</div>
+    <div class="lesson-pick" id="learnThemePick"></div>
+
+    <div class="sec-title" id="lessonSecTitle">Leçon — Famille en Ewe</div>
+    <div class="lesson-progress" id="lessonDots"></div>
+    <div id="lessonCardWrap"></div>
+    <div class="lesson-nav">
+      <button class="lesson-btn prev" id="lessonPrevBtn" onclick="lessonNav(-1)">← Précédent</button>
+      <button class="lesson-btn next" id="lessonNextBtn" onclick="lessonNav(1)">Suivant →</button>
+    </div>
+
+    <div class="sec-title">🎯 Quiz — testez vos connaissances</div>
+    <div class="quiz-wrap"><div class="quiz-card" id="quizCard"></div></div>
+  </div>
+</div>
+
+<!-- ─── DETAIL MOT ─── -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-word" id="dWord"></div>
+      <div class="sheet-meta" id="dMeta"></div>
+      <button class="sheet-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="lbl">Traduction française</div><div class="val" id="dFr"></div>
+      <div class="lbl">Traduction anglaise</div><div class="val" id="dEn"></div>
+      <div class="lbl">Toutes les langues</div>
+      <div class="lang-grid">
+        <div class="lang-cell"><div class="lbl">Ewe</div><div class="val" id="dEwe" style="margin-bottom:0"></div></div>
+        <div class="lang-cell"><div class="lbl">Kabyè</div><div class="val" id="dKabye" style="margin-bottom:0"></div></div>
+        <div class="lang-cell"><div class="lbl">Mina</div><div class="val" id="dMina" style="margin-bottom:0"></div></div>
+        <div class="lang-cell"><div class="lbl">Adja</div><div class="val" id="dAdja" style="margin-bottom:0"></div></div>
+      </div>
+      <div class="lbl" style="margin-top:4px">Tons (Ewe)</div><div class="ton-badge" id="dTon" style="margin-bottom:12px;display:inline-block"></div>
+      <div class="lbl" style="margin-top:8px">Classe grammaticale</div><div class="val" id="dClasse"></div>
+      <div class="lbl">Note culturelle</div><div style="font-size:13px;color:#64748B;line-height:1.6" id="dNote"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── LANGUE PICKER (traduction) ─── -->
+<div class="lang-picker-overlay" id="langPickerOverlay" onclick="if(event.target===this)closeLangPicker()">
+  <div class="lang-picker-sheet">
+    <div class="lp-hdr">
+      <div class="lp-title" id="lpTitle">Choisir la langue</div>
+      <button class="lp-close" onclick="closeLangPicker()">✕</button>
+    </div>
+    <div id="lpList"></div>
+  </div>
+</div>
+
+<!-- ─── BOTTOM NAV ─── -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="navDico" onclick="showPage('Dico')"><span class="nav-icon">📖</span>Dictionnaire</div>
+  <div class="nav-item" id="navTrad" onclick="showPage('Trad')"><span class="nav-icon">🔤</span>Traduction</div>
+  <div class="nav-item" id="navLearn" onclick="showPage('Learn')"><span class="nav-icon">🎓</span>Apprendre</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DONNÉES
+// ══════════════════════════════════════════════
+const LANGS = [
+  {key:'fr',  label:'Français',  flag:'🇫🇷', family:'International'},
+  {key:'en',  label:'Anglais',   flag:'🇬🇧', family:'International'},
+  {key:'ewe', label:'Ewe',       flag:'🌍', family:'Gbe — Sud Togo'},
+  {key:'kabye',label:'Kabyè',   flag:'🌍', family:'Gur — Nord Togo'},
+  {key:'mina',label:'Mina',      flag:'🌍', family:'Gbe — Lomé'},
+  {key:'adja',label:'Adja',      flag:'🌍', family:'Gbe — Plateaux'},
+  {key:'yoruba',label:'Yoruba',  flag:'🌍', family:'Régional — Bénin/Nigeria'},
+];
+
+const THEMES = ['Tous','Famille','Salutations','Santé','Agriculture','Chiffres','École','Commerce','Nature','Urgences','Culture'];
+const THEME_ICO = {Famille:'👨‍👩‍👧',Salutations:'👋',Santé:'🏥',Agriculture:'🌾',Chiffres:'🔢',École:'📚',Commerce:'🛒',Nature:'🌿',Urgences:'🚨',Culture:'🎭'};
+const THEME_COL = {Famille:'#E6FAF8',Salutations:'#FFF7ED',Santé:'#FEE2E2',Agriculture:'#ECFDF5',Chiffres:'#EFF6FF',École:'#F5F3FF',Commerce:'#FFFBEB',Nature:'#F0FDF4',Urgences:'#FEF2F2',Culture:'#FDF4FF'};
+
+const words = [
+  {id:"EWE-001",ewe:"Atsu / Ama",kabye:"",mina:"",adja:"",fr:"Prénom après des jumeaux",en:"Name after twins",yoruba:"",theme:"Famille",classe:"Nom propre",ton:"Bas-haut",note:"Prénom très commun dans les familles Ewe"},
+  {id:"EWE-002",ewe:"Fofõ",kabye:"Baabu",mina:"",adja:"Fofɔ",fr:"Papa / Père",en:"Father",yoruba:"Baba",theme:"Famille",classe:"Nom",ton:"Bas-bas-haut",note:"Terme affectif utilisé par les enfants"},
+  {id:"EWE-003",ewe:"Nõvi",kabye:"",mina:"",adja:"Nɔvi",fr:"Frère / Sœur",en:"Sibling",yoruba:"",theme:"Famille",classe:"Nom",ton:"Haut-bas",note:"S'applique aux deux sexes en Ewe"},
+  {id:"EWE-004",ewe:"Dada",kabye:"Maama",mina:"",adja:"Dada",fr:"Maman / Mère",en:"Mother",yoruba:"Ìyá",theme:"Famille",classe:"Nom",ton:"Bas-haut",note:"Terme affectif enfantin"},
+  {id:"EWE-005",ewe:"Torgbui",kabye:"Kɔkɔ",mina:"",adja:"Tɔgbi",fr:"Grand-père",en:"Grandfather",yoruba:"",theme:"Famille",classe:"Nom",ton:"Haut-bas-haut",note:"Terme respectueux pour aîné"},
+  {id:"EWE-006",ewe:"Mama",kabye:"Nyɛma",mina:"",adja:"Mama",fr:"Grand-mère",en:"Grandmother",yoruba:"",theme:"Famille",classe:"Nom",ton:"Bas-haut",note:"Terme universel en langues Gbe"},
+  {id:"EWE-007",ewe:"Ŋutsu",kabye:"Kodaa",mina:"",adja:"Ŋutsu",fr:"Homme / Mari",en:"Man",yoruba:"Ọkùnrin",theme:"Famille",classe:"Nom",ton:"Haut-bas",note:"Contexte dépend de la phrase"},
+  {id:"EWE-008",ewe:"Nyonu",kabye:"Pɔpɔ",mina:"",adja:"Nyɔnu",fr:"Femme / Épouse",en:"Woman",yoruba:"Obìnrin",theme:"Famille",classe:"Nom",ton:"Bas-bas",note:"Contexte dépend de la phrase"},
+  {id:"EWE-009",ewe:"Vi",kabye:"Bi",mina:"",adja:"Vi",fr:"Enfant",en:"Child",yoruba:"Ọmọ",theme:"Famille",classe:"Nom",ton:"Bas",note:"Peut précéder un prénom"},
+  {id:"EWE-010",ewe:"Ƒome",kabye:"Sɔ",mina:"",adja:"Ƒome",fr:"Maison / Famille",en:"Home",yoruba:"Ilé",theme:"Famille",classe:"Nom",ton:"Bas-haut",note:"Double sens : lieu et groupe familial"},
+  {id:"SAL-001",ewe:"Ŋdi",kabye:"Awo",mina:"Ŋdi",adja:"Ŋdi",fr:"Bonjour (matin)",en:"Good morning",yoruba:"Ẹ káàárọ̀",theme:"Salutations",classe:"Interjection",ton:"Haut-bas",note:"Utilisé avant midi"},
+  {id:"SAL-002",ewe:"Ŋdɔ",kabye:"",mina:"",adja:"Ŋdɔ",fr:"Bonjour (après-midi)",en:"Good afternoon",yoruba:"Ẹ káàsán",theme:"Salutations",classe:"Interjection",ton:"Haut-haut",note:"Utilisé de midi à 17h"},
+  {id:"SAL-003",ewe:"Fiɛyi",kabye:"Laafɩ",mina:"",adja:"Fiɛyi",fr:"Bonsoir",en:"Good evening",yoruba:"Ẹ kú irọlẹ",theme:"Salutations",classe:"Interjection",ton:"Bas-haut-bas",note:"Après le coucher du soleil"},
+  {id:"SAL-004",ewe:"Woezor",kabye:"Karibu",mina:"Woezor",adja:"Woezɔ",fr:"Bienvenue",en:"Welcome",yoruba:"Ẹ káabọ̀",theme:"Salutations",classe:"Interjection",ton:"Bas-haut",note:"Mot emblématique de l'Ewe"},
+  {id:"SAL-005",ewe:"Akpe",kabye:"Ɩyɛ",mina:"Akpe",adja:"Akpe",fr:"Merci",en:"Thank you",yoruba:"Ẹ ṣéun",theme:"Salutations",classe:"Interjection",ton:"Haut-bas",note:"Expression de gratitude courante"},
+  {id:"SAL-006",ewe:"Mawoe",kabye:"Aawo",mina:"",adja:"Mawoe",fr:"Au revoir",en:"Goodbye",yoruba:"Ó dàárọ̀",theme:"Salutations",classe:"Interjection",ton:"Bas-haut-bas",note:"Formule de départ"},
+  {id:"SAL-007",ewe:"Efoa?",kabye:"Ŋmɩŋmɩ?",mina:"",adja:"Efoa?",fr:"Comment vas-tu ?",en:"How are you?",yoruba:"Báwo ni?",theme:"Salutations",classe:"Phrase",ton:"Bas-haut",note:"Question de politesse quotidienne"},
+  {id:"SAL-008",ewe:"Melea",kabye:"Laafɩ",mina:"",adja:"Melea",fr:"Je vais bien",en:"I am fine",yoruba:"Mo wà dáadáa",theme:"Salutations",classe:"Phrase",ton:"Bas-haut-bas",note:"Réponse standard"},
+  {id:"SAL-009",ewe:"Yoo",kabye:"Yoo",mina:"Yoo",adja:"Yoo",fr:"D'accord / Oui",en:"OK / Yes",yoruba:"Ó yẹ",theme:"Salutations",classe:"Interjection",ton:"Haut",note:"Accord universel en langues Gbe"},
+  {id:"SAL-010",ewe:"Ao",kabye:"Ayi",mina:"Ao",adja:"Ao",fr:"Non",en:"No",yoruba:"Rárá",theme:"Salutations",classe:"Interjection",ton:"Haut",note:"Refus poli"},
+  {id:"SAN-001",ewe:"Dɔ",kabye:"Kɩ",mina:"",adja:"Dɔ",fr:"Maladie / Douleur",en:"Illness",yoruba:"Àrùn",theme:"Santé",classe:"Nom",ton:"Haut",note:"Terme générique pour toute douleur"},
+  {id:"SAN-002",ewe:"Anyigba dɔ",kabye:"",mina:"",adja:"",fr:"Paludisme",en:"Malaria",yoruba:"Ibà",theme:"Santé",classe:"Nom composé",ton:"Bas-haut haut",note:"Littéralement maladie de la terre"},
+  {id:"SAN-003",ewe:"Dɔwɔ",kabye:"Kpemti",mina:"",adja:"Dɔwɔ",fr:"Médicament",en:"Medicine",yoruba:"Oogun",theme:"Santé",classe:"Nom",ton:"Haut-bas",note:"Peut désigner médecine traditionnelle"},
+  {id:"SAN-004",ewe:"Nukpe",kabye:"",mina:"",adja:"Nukpe",fr:"Hôpital",en:"Hospital",yoruba:"Ilé ìwòsàn",theme:"Santé",classe:"Nom",ton:"Haut-bas",note:"Terme moderne adopté"},
+  {id:"SAN-005",ewe:"Agbetɔ",kabye:"Tɩntɩnlaʋ",mina:"",adja:"Agbetɔ",fr:"Médecin",en:"Doctor",yoruba:"Dókítà",theme:"Santé",classe:"Nom",ton:"Haut-bas-haut",note:"Littéralement maître de la vie"},
+  {id:"SAN-006",ewe:"Dzodzo",kabye:"Kolɔ",mina:"",adja:"Dzodzo",fr:"Fièvre",en:"Fever",yoruba:"Ibà",theme:"Santé",classe:"Nom",ton:"Bas-haut",note:"Symptôme courant des maladies tropicales"},
+  {id:"SAN-007",ewe:"Gbadza",kabye:"",mina:"",adja:"Gbadza",fr:"Eau potable",en:"Drinking water",yoruba:"Omi",theme:"Santé",classe:"Nom",ton:"Haut-bas",note:"Essentiel pour messages de santé publique"},
+  {id:"SAN-008",ewe:"Asi",kabye:"Ku",mina:"",adja:"Asi",fr:"Main",en:"Hand",yoruba:"Ọwọ́",theme:"Santé",classe:"Nom",ton:"Bas",note:"Crucial pour messages d'hygiène"},
+  {id:"SAN-009",ewe:"Fɔfɔ",kabye:"",mina:"",adja:"Fɔfɔ",fr:"Se laver les mains",en:"Wash hands",yoruba:"Fọ ọwọ́",theme:"Santé",classe:"Verbe",ton:"Bas-haut",note:"Hygiène de base"},
+  {id:"SAN-010",ewe:"Atike",kabye:"",mina:"",adja:"Atike",fr:"Plante médicinale",en:"Medicinal plant",yoruba:"Ewé oogun",theme:"Santé",classe:"Nom",ton:"Bas-bas",note:"Savoir traditionnel Adja très riche"},
+  {id:"AGR-001",ewe:"Agble",kabye:"Saala",mina:"",adja:"Agble",fr:"Champ / Plantation",en:"Farm",yoruba:"Oko",theme:"Agriculture",classe:"Nom",ton:"Haut-bas",note:"Pilier de l'économie rurale togolaise"},
+  {id:"AGR-002",ewe:"Bƒo",kabye:"Naawu",mina:"",adja:"Bɔ",fr:"Maïs",en:"Corn",yoruba:"Àgbàdo",theme:"Agriculture",classe:"Nom",ton:"Haut",note:"Culture principale en zone Gbe"},
+  {id:"AGR-003",ewe:"Kaklo",kabye:"Saŋfaa",mina:"",adja:"Kaklo",fr:"Igname",en:"Yam",yoruba:"Isu",theme:"Agriculture",classe:"Nom",ton:"Haut-bas",note:"Tubercule sacré dans certaines cultures"},
+  {id:"AGR-004",ewe:"Ava",kabye:"Tuya",mina:"",adja:"Ava",fr:"Mil / Sorgho",en:"Millet",yoruba:"Oka",theme:"Agriculture",classe:"Nom",ton:"Bas",note:"Culture du nord Togo"},
+  {id:"AGR-005",ewe:"Atadi",kabye:"Toma",mina:"",adja:"Atadi",fr:"Haricot",en:"Bean",yoruba:"Ẹwà",theme:"Agriculture",classe:"Nom",ton:"Bas-bas",note:"Légumineuse de base"},
+  {id:"AGR-006",ewe:"Bli",kabye:"Kɔbu",mina:"",adja:"Bli",fr:"Riz",en:"Rice",yoruba:"Iresi",theme:"Agriculture",classe:"Nom",ton:"Haut",note:"Culture en expansion au Togo"},
+  {id:"AGR-007",ewe:"Tutue",kabye:"",mina:"",adja:"Tutue",fr:"Récolte",en:"Harvest",yoruba:"Ikórè",theme:"Agriculture",classe:"Nom",ton:"Bas-bas",note:"Période festive dans les communautés"},
+  {id:"AGR-008",ewe:"Dzogbe",kabye:"",mina:"",adja:"Dzogbe",fr:"Saison des pluies",en:"Rainy season",yoruba:"Ojo",theme:"Agriculture",classe:"Nom",ton:"Haut-bas",note:"Détermine le calendrier agricole"},
+  {id:"AGR-009",ewe:"Wɔ agble",kabye:"",mina:"",adja:"Wɔ agble",fr:"Cultiver",en:"To farm",yoruba:"Ṣe oko",theme:"Agriculture",classe:"Verbe",ton:"Bas haut-bas",note:"Action centrale du monde rural"},
+  {id:"AGR-010",ewe:"Ƒuƒu",kabye:"",mina:"",adja:"Ƒuƒu",fr:"Fonio",en:"Fonio",yoruba:"",theme:"Agriculture",classe:"Nom",ton:"Bas-bas",note:"Céréale ancestrale à valoriser"},
+  {id:"CHI-001",ewe:"Ɖeka",kabye:"Kʊ",mina:"",adja:"Ɖeka",fr:"Un (1)",en:"One",yoruba:"Ọkan",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:"Base du système numéral Ewe"},
+  {id:"CHI-002",ewe:"Eve",kabye:"Ayɩbɩ",mina:"",adja:"Eve",fr:"Deux (2)",en:"Two",yoruba:"Èjì",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:""},
+  {id:"CHI-003",ewe:"Etɔ̃",kabye:"Ata",mina:"",adja:"Etɔ̃",fr:"Trois (3)",en:"Three",yoruba:"Ẹta",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:""},
+  {id:"CHI-004",ewe:"Ene",kabye:"Anaŋ",mina:"",adja:"Ene",fr:"Quatre (4)",en:"Four",yoruba:"Ẹrin",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:""},
+  {id:"CHI-005",ewe:"Atɔ̃",kabye:"Anu",mina:"",adja:"Atɔ̃",fr:"Cinq (5)",en:"Five",yoruba:"Àrún",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:""},
+  {id:"CHI-006",ewe:"Aɖe",kabye:"Alɩ",mina:"",adja:"Aɖe",fr:"Six (6)",en:"Six",yoruba:"Ẹfà",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:""},
+  {id:"CHI-007",ewe:"Adre",kabye:"Aɖɩ",mina:"",adja:"Adre",fr:"Sept (7)",en:"Seven",yoruba:"Èje",theme:"Chiffres",classe:"Adjectif num.",ton:"Haut-haut",note:""},
+  {id:"CHI-008",ewe:"Enyi",kabye:"Anyɩ",mina:"",adja:"Enyi",fr:"Huit (8)",en:"Eight",yoruba:"Ẹjọ",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:""},
+  {id:"CHI-009",ewe:"Asieke",kabye:"Awɔi",mina:"",adja:"Asieke",fr:"Neuf (9)",en:"Nine",yoruba:"Ẹsán",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut-haut",note:""},
+  {id:"CHI-010",ewe:"Ewo",kabye:"Wʊi",mina:"",adja:"Ewo",fr:"Dix (10)",en:"Ten",yoruba:"Ẹwá",theme:"Chiffres",classe:"Adjectif num.",ton:"Bas-haut",note:"Base décimale"},
+  {id:"ECO-001",ewe:"Sukɔ",kabye:"Esukuu",mina:"",adja:"Sukɔ",fr:"École",en:"School",yoruba:"Ilé ìwé",theme:"École",classe:"Nom",ton:"Haut-haut",note:"Du français école adapté phonétiquement"},
+  {id:"ECO-002",ewe:"Sukɔtɔ",kabye:"Esukuutɔ",mina:"",adja:"Sukɔtɔ",fr:"Enseignant",en:"Teacher",yoruba:"Olùkọ́",theme:"École",classe:"Nom",ton:"Haut-haut-haut",note:"Suffixe tɔ = maître/expert"},
+  {id:"ECO-003",ewe:"Agbalẽ",kabye:"Takarda",mina:"",adja:"Agbalẽ",fr:"Livre",en:"Book",yoruba:"Ìwé",theme:"École",classe:"Nom",ton:"Haut-bas-haut",note:"Objet scolaire fondamental"},
+  {id:"ECO-004",ewe:"Nunya",kabye:"Nuŋmɩ",mina:"",adja:"Nunya",fr:"Connaissance",en:"Knowledge",yoruba:"Ìmọ̀",theme:"École",classe:"Nom",ton:"Bas-haut",note:"Valeur centrale dans la culture Ewe"},
+  {id:"ECO-005",ewe:"Se nunya",kabye:"",mina:"",adja:"Se nunya",fr:"Apprendre",en:"To learn",yoruba:"Kọ́",theme:"École",classe:"Verbe",ton:"Bas haut-bas",note:"Littéralement saisir la connaissance"},
+  {id:"ECO-006",ewe:"Ŋɔŋlɔ",kabye:"",mina:"",adja:"Ŋɔŋlɔ",fr:"Écrire",en:"To write",yoruba:"Kọ",theme:"École",classe:"Verbe",ton:"Haut-bas",note:"Action fondamentale de l'alphabétisation"},
+  {id:"ECO-007",ewe:"Se ŋɔŋlɔ",kabye:"",mina:"",adja:"Se ŋɔŋlɔ",fr:"Lire",en:"To read",yoruba:"Ka",theme:"École",classe:"Verbe",ton:"Bas haut-bas",note:"Compétence clé de l'application"},
+  {id:"ECO-008",ewe:"Xɔxɔ",kabye:"",mina:"",adja:"Xɔxɔ",fr:"Question",en:"Question",yoruba:"Ìbéèrè",theme:"École",classe:"Nom",ton:"Haut-haut",note:"Dans le contexte pédagogique"},
+  {id:"ECO-009",ewe:"Eyɔ",kabye:"",mina:"",adja:"Eyɔ",fr:"Réponse",en:"Answer",yoruba:"Ìdáhùn",theme:"École",classe:"Nom",ton:"Bas-haut",note:"Dans le contexte pédagogique"},
+  {id:"ECO-010",ewe:"Suku kpɔxɔxɔ",kabye:"",mina:"",adja:"",fr:"Examen",en:"Exam",yoruba:"Ìdánwò",theme:"École",classe:"Nom composé",ton:"Haut-bas haut",note:"Contexte scolaire moderne"},
+  {id:"COM-001",ewe:"Ayiyi",kabye:"Gbaŋ",mina:"Ayiyi",adja:"Ayiyi",fr:"Marché",en:"Market",yoruba:"Ọjà",theme:"Commerce",classe:"Nom",ton:"Bas-haut-bas",note:"Institution centrale de la vie togolaise"},
+  {id:"COM-002",ewe:"Ga",kabye:"Wʊru",mina:"Ga",adja:"Ga",fr:"Argent",en:"Money",yoruba:"Owó",theme:"Commerce",classe:"Nom",ton:"Haut",note:"Terme le plus courant"},
+  {id:"COM-003",ewe:"Trõ",kabye:"Laaɣɩ",mina:"",adja:"Trɔ",fr:"Acheter",en:"To buy",yoruba:"Ra",theme:"Commerce",classe:"Verbe",ton:"Haut",note:"Action commerciale fondamentale"},
+  {id:"COM-004",ewe:"Dze",kabye:"",mina:"",adja:"Dze",fr:"Vendre",en:"To sell",yoruba:"Ta",theme:"Commerce",classe:"Verbe",ton:"Bas",note:"Activité des marchés quotidiens"},
+  {id:"COM-005",ewe:"Ƒe",kabye:"",mina:"Ƒe",adja:"Ƒe",fr:"Prix / Coût",en:"Price",yoruba:"Iye",theme:"Commerce",classe:"Nom",ton:"Haut",note:"Négociation au marché"},
+  {id:"COM-006",ewe:"Aʋawo",kabye:"",mina:"",adja:"Aʋawo",fr:"Vêtements",en:"Clothes",yoruba:"Aṣọ",theme:"Commerce",classe:"Nom",ton:"Bas-bas-haut",note:"Commerce textile très actif à Lomé"},
+  {id:"COM-007",ewe:"Amenuveve",kabye:"Kɔnkɔŋ",mina:"",adja:"Amenuveve",fr:"Cadeau",en:"Gift",yoruba:"Ẹbọ",theme:"Commerce",classe:"Nom",ton:"Bas-haut-bas-haut",note:"Pratique culturelle importante"},
+  {id:"COM-008",ewe:"Nu ku ga",kabye:"",mina:"",adja:"",fr:"Cher / Coûteux",en:"Expensive",yoruba:"Gbowó",theme:"Commerce",classe:"Adj.",ton:"Bas bas haut",note:"Littéralement chose qui tue argent"},
+  {id:"COM-009",ewe:"Dada ga",kabye:"",mina:"",adja:"",fr:"Payer",en:"To pay",yoruba:"San",theme:"Commerce",classe:"Verbe",ton:"Bas-haut haut",note:"Terme courant dans les transactions"},
+  {id:"COM-010",ewe:"Deka kple deka",kabye:"",mina:"",adja:"",fr:"Addition",en:"Addition",yoruba:"",theme:"Commerce",classe:"Nom",ton:"Bas-haut bas-haut bas-haut",note:"Littéralement un avec un"},
+  {id:"NAT-001",ewe:"Anyigba",kabye:"Tɩɣa",mina:"",adja:"Anyigba",fr:"Terre / Sol",en:"Earth",yoruba:"Ilẹ̀",theme:"Nature",classe:"Nom",ton:"Bas-haut-bas",note:"Sacré dans de nombreuses cultures Ewe"},
+  {id:"NAT-002",ewe:"Tsi",kabye:"Maŋ",mina:"Tsi",adja:"Tsi",fr:"Eau / Rivière",en:"Water",yoruba:"Omi",theme:"Nature",classe:"Nom",ton:"Bas",note:"Élément vital et spirituel"},
+  {id:"NAT-003",ewe:"Dzã",kabye:"Silim",mina:"",adja:"Dzã",fr:"Feu",en:"Fire",yoruba:"Iná",theme:"Nature",classe:"Nom",ton:"Haut",note:"Symbolisme fort dans les rituels"},
+  {id:"NAT-004",ewe:"Fefe",kabye:"Tɩɣdi",mina:"",adja:"Fefe",fr:"Vent",en:"Wind",yoruba:"Afẹ́fẹ́",theme:"Nature",classe:"Nom",ton:"Bas-haut",note:"Association à l'esprit"},
+  {id:"NAT-005",ewe:"Ƒuƒo",kabye:"Wɩɩrʊ",mina:"",adja:"Ƒuƒo",fr:"Arbre",en:"Tree",yoruba:"Igi",theme:"Nature",classe:"Nom",ton:"Bas-haut",note:"Rôle écologique et spirituel"},
+  {id:"NAT-006",ewe:"Adze",kabye:"Kurugu",mina:"",adja:"Adze",fr:"Soleil",en:"Sun",yoruba:"Oòrùn",theme:"Nature",classe:"Nom",ton:"Haut-bas",note:"Symbole central dans la cosmologie Gbe"},
+  {id:"NAT-007",ewe:"Dzɔli",kabye:"Abaŋtɩɣa",mina:"",adja:"Dzɔli",fr:"Pluie",en:"Rain",yoruba:"Òjò",theme:"Nature",classe:"Nom",ton:"Haut-bas",note:"Crucial pour l'agriculture"},
+  {id:"NAT-008",ewe:"Kɔ",kabye:"Kaŋ",mina:"",adja:"Kɔ",fr:"Montagne",en:"Mountain",yoruba:"Òkè",theme:"Nature",classe:"Nom",ton:"Haut",note:"Géographie du Togo"},
+  {id:"NAT-009",ewe:"Gã",kabye:"Gambaga",mina:"",adja:"Gã",fr:"Fleuve",en:"River",yoruba:"Odò",theme:"Nature",classe:"Nom",ton:"Haut",note:"Fleuve Mono et Oti au Togo"},
+  {id:"NAT-010",ewe:"Dzɔdzɔ",kabye:"Lilim",mina:"",adja:"Dzɔdzɔ",fr:"Fleur",en:"Flower",yoruba:"Ododo",theme:"Nature",classe:"Nom",ton:"Bas-bas",note:"Beauté naturelle"},
+  {id:"URG-001",ewe:"Kpɔ!",kabye:"Gɔɔ!",mina:"Kpɔ!",adja:"Kpɔ!",fr:"Au secours !",en:"Help!",yoruba:"Ẹ̀gbà mi!",theme:"Urgences",classe:"Interjection",ton:"Haut",note:"Priorité absolue pour le canal USSD"},
+  {id:"URG-002",ewe:"Dɔ le ŋu",kabye:"Kɩ le ŋʊ",mina:"",adja:"Dɔ le ŋu",fr:"Je suis malade",en:"I am sick",yoruba:"Mo ṣàìsàn",theme:"Urgences",classe:"Phrase",ton:"Haut bas haut",note:"Message essentiel pour urgences médicales"},
+  {id:"URG-003",ewe:"Nukpe li?",kabye:"",mina:"",adja:"Nukpe li?",fr:"Où est l'hôpital ?",en:"Where is the hospital?",yoruba:"Nibo ni ilé ìwòsàn?",theme:"Urgences",classe:"Phrase",ton:"Haut-bas bas-haut",note:"Navigation d'urgence"},
+  {id:"URG-004",ewe:"Dzo!",kabye:"Ti!",mina:"Dzo!",adja:"Dzo!",fr:"Feu ! (alarme)",en:"Fire!",yoruba:"Iná!",theme:"Urgences",classe:"Interjection",ton:"Haut",note:"Alerte incendie"},
+  {id:"URG-005",ewe:"Mezo",kabye:"Meba",mina:"",adja:"Mezo",fr:"Je viens / J'arrive",en:"I'm coming",yoruba:"Mo ń bọ̀",theme:"Urgences",classe:"Phrase",ton:"Bas-haut",note:"Réponse à un appel d'urgence"},
+  {id:"URG-006",ewe:"Wɔ hã",kabye:"",mina:"",adja:"Wɔ hã",fr:"Arrête !",en:"Stop!",yoruba:"Dúró!",theme:"Urgences",classe:"Interjection",ton:"Bas haut",note:"Ordre d'urgence"},
+  {id:"URG-007",ewe:"Vi le dɔ",kabye:"",mina:"",adja:"Vi le dɔ",fr:"L'enfant est malade",en:"Child is sick",yoruba:"Ọmọ ṣàìsàn",theme:"Urgences",classe:"Phrase",ton:"Bas bas haut",note:"Contexte pédiatrique fréquent"},
+  {id:"URG-008",ewe:"Mede ŋu",kabye:"",mina:"",adja:"Mede ŋu",fr:"S'il vous plaît",en:"Please",yoruba:"Jọ̀wọ́",theme:"Urgences",classe:"Interjection",ton:"Bas-haut haut",note:"Politesse dans les demandes urgentes"},
+  {id:"URG-009",ewe:"Ŋkeke tɛ?",kabye:"",mina:"",adja:"Ŋkeke tɛ?",fr:"Quelle heure est-il ?",en:"What time is it?",yoruba:"Ìgbà wo ni?",theme:"Urgences",classe:"Phrase",ton:"Haut-bas haut",note:"Coordination temporelle"},
+  {id:"URG-010",ewe:"Kpɔ! Kpɔ!",kabye:"",mina:"",adja:"",fr:"Au secours ! (urgent)",en:"Help! Help!",yoruba:"Ẹ̀gbà mi! Ẹ̀gbà mi!",theme:"Urgences",classe:"Interjection",ton:"Haut Haut",note:"Répétition pour insistance"},
+  {id:"CUL-001",ewe:"Mawu",kabye:"Wuntɔ",mina:"Mawu",adja:"Mawu",fr:"Dieu",en:"God",yoruba:"Ọlọ́run",theme:"Culture",classe:"Nom propre",ton:"Bas-haut",note:"Divinité suprême dans les religions Gbe"},
+  {id:"CUL-002",ewe:"Trɔ",kabye:"",mina:"",adja:"Trɔ",fr:"Esprit / Divinité",en:"Spirit",yoruba:"Òrìṣà",theme:"Culture",classe:"Nom",ton:"Haut",note:"Système religieux traditionnel Ewe"},
+  {id:"CUL-003",ewe:"Hã",kabye:"Kɩwɔŋ",mina:"Hã",adja:"Hã",fr:"Chant",en:"Song",yoruba:"Orin",theme:"Culture",classe:"Nom",ton:"Haut",note:"Expression artistique fondamentale"},
+  {id:"CUL-004",ewe:"Hamedze",kabye:"Kɩtɩŋ",mina:"",adja:"",fr:"Danse",en:"Dance",yoruba:"Ijó",theme:"Culture",classe:"Nom",ton:"Bas-haut",note:"Pratique culturelle essentielle"},
+  {id:"CUL-005",ewe:"Ŋutifafa",kabye:"Laafɩ",mina:"",adja:"Ŋutifafa",fr:"Paix",en:"Peace",yoruba:"Alaafia",theme:"Culture",classe:"Nom",ton:"Haut-bas-haut",note:"Valeur fondamentale dans toutes les langues"},
+  {id:"CUL-006",ewe:"Dzidze",kabye:"Nisaal",mina:"",adja:"Dzidze",fr:"Joie / Bonheur",en:"Joy",yoruba:"Ayọ̀",theme:"Culture",classe:"Nom",ton:"Bas-haut",note:"Émotion positive universelle"},
+  {id:"CUL-007",ewe:"Lãme",kabye:"Yaɣili",mina:"",adja:"Lãme",fr:"Cœur / Âme",en:"Soul",yoruba:"Ọkàn",theme:"Culture",classe:"Nom",ton:"Haut-bas",note:"Siège des émotions dans la cosmologie Ewe"},
+  {id:"CUL-008",ewe:"Atrikpui",kabye:"",mina:"",adja:"",fr:"Tam-tam / Tambour",en:"Drum",yoruba:"Ìlù",theme:"Culture",classe:"Nom",ton:"Bas-haut-bas",note:"Instrument central de la musique Ewe"},
+  {id:"CUL-009",ewe:"Dzifɔfɔ",kabye:"",mina:"",adja:"",fr:"Purification",en:"Purification",yoruba:"Ìmúdára",theme:"Culture",classe:"Nom",ton:"Bas-haut-haut",note:"Rituel traditionnel"},
+  {id:"CUL-010",ewe:"Agbamedzidzɔ",kabye:"",mina:"",adja:"",fr:"Cérémonie",en:"Ceremony",yoruba:"Àjọyọ̀",theme:"Culture",classe:"Nom",ton:"Haut-bas-haut-haut",note:"Rite de passage ou fête communautaire"},
+];
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let dicoLang = 'fr';
+let activeTheme = 'Tous';
+let tradFrom = 'fr', tradTo = 'ewe';
+let lpTarget = 'from';
+let learnLang = 'ewe', learnTheme = 'Famille';
+let learnIdx = 0;
+let xp = 0;
+let quizState = {pool:[], idx:0, score:0, answered:false};
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+function showPage(p){
+  ['Dico','Trad','Learn'].forEach(x=>{
+    document.getElementById('page'+x).classList.toggle('active',x===p);
+    document.getElementById('nav'+x).classList.toggle('active',x===p);
+  });
+  if(p==='Learn') renderLearn();
+}
+
+// ══════════════════════════════════════════════
+// DICTIONNAIRE
+// ══════════════════════════════════════════════
+function initDico(){
+  // Langue pills
+  const row = document.getElementById('dicoLangRow');
+  LANGS.forEach(l => {
+    const p = document.createElement('div');
+    p.className = 'lang-pill' + (l.key===dicoLang?' active':'');
+    p.innerHTML = l.flag+' '+l.label;
+    p.onclick = () => {
+      dicoLang = l.key;
+      document.querySelectorAll('#dicoLangRow .lang-pill').forEach(x=>x.classList.remove('active'));
+      p.classList.add('active');
+      filterWords();
+    };
+    row.appendChild(p);
+  });
+  // Themes
+  const tr = document.getElementById('themesRow');
+  THEMES.forEach(t => {
+    const c = document.createElement('div');
+    c.className = 't-chip' + (t==='Tous'?' active':'');
+    c.textContent = (t!=='Tous'?THEME_ICO[t]+' ':'')+t;
+    c.onclick = () => {
+      activeTheme = t;
+      document.querySelectorAll('.t-chip').forEach(x=>x.classList.remove('active'));
+      c.classList.add('active');
+      filterWords();
+    };
+    tr.appendChild(c);
+  });
+  filterWords();
+}
+
+function getWordField(w, langKey){
+  const map = {fr:'fr',en:'en',ewe:'ewe',kabye:'kabye',mina:'mina',adja:'adja',yoruba:'yoruba'};
+  return w[map[langKey]] || '';
+}
+
+function filterWords(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const f = words.filter(w => {
+    const mt = activeTheme==='Tous' || w.theme===activeTheme;
+    const fieldVal = getWordField(w, dicoLang).toLowerCase();
+    const ms = !q || fieldVal.includes(q) || w.fr.toLowerCase().includes(q);
+    return mt && ms && (getWordField(w,dicoLang) || dicoLang==='fr');
+  });
+  document.getElementById('statsRow').innerHTML = `<b>${f.length}</b> résultat${f.length>1?'s':''} en ${LANGS.find(l=>l.key===dicoLang).label}`;
+  const list = document.getElementById('wordList');
+  if(!f.length){list.innerHTML='<div class="empty-state"><div class="empty-ico">🔍</div>Aucun mot trouvé dans cette langue</div>';return;}
+  list.innerHTML = f.map(w => {
+    const mainWord = getWordField(w,dicoLang) || w.ewe;
+    const tr = dicoLang!=='fr' ? w.fr : w.ewe;
+    return `<div class="word-card" onclick="openDetail('${w.id}')">
+      <div class="wc-main"><div class="wc-word">${mainWord}</div><div class="wc-tr">${tr}</div></div>
+      <span class="wc-badge">${w.theme}</span><span class="wc-arr">›</span>
+    </div>`;
+  }).join('');
+}
+
+function openDetail(id){
+  const w = words.find(x=>x.id===id); if(!w) return;
+  document.getElementById('dWord').textContent = w.ewe || w.adja;
+  document.getElementById('dMeta').textContent = `${w.theme} · ${w.classe}`;
+  document.getElementById('dFr').textContent = w.fr;
+  document.getElementById('dEn').textContent = w.en;
+  document.getElementById('dEwe').textContent = w.ewe || '—';
+  document.getElementById('dKabye').textContent = w.kabye || '—';
+  document.getElementById('dMina').textContent = w.mina || '—';
+  document.getElementById('dAdja').textContent = w.adja || '—';
+  document.getElementById('dTon').textContent = w.ton || '—';
+  document.getElementById('dClasse').textContent = w.classe;
+  document.getElementById('dNote').textContent = w.note || '—';
+  document.getElementById('detailOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('open'); document.body.style.overflow=''; }
+
+// ══════════════════════════════════════════════
+// TRADUCTION
+// ══════════════════════════════════════════════
+function getLangLabel(key){ const l=LANGS.find(x=>x.key===key); return l?l.flag+' '+l.label:''; }
+
+function updateTradBtns(){
+  document.getElementById('tradFromVal').textContent = getLangLabel(tradFrom);
+  document.getElementById('tradToVal').textContent = getLangLabel(tradTo);
+  document.getElementById('resultBox').style.display='none';
+}
+
+function swapLangs(){
+  [tradFrom, tradTo] = [tradTo, tradFrom];
+  updateTradBtns();
+}
+
+function openLangPicker(target){
+  lpTarget = target;
+  document.getElementById('lpTitle').textContent = target==='from' ? 'Traduire depuis...' : 'Traduire vers...';
+  const selected = target==='from' ? tradFrom : tradTo;
+  document.getElementById('lpList').innerHTML = LANGS.map(l=>`
+    <div class="lp-item ${l.key===selected?'selected':''}" onclick="selectLang('${l.key}')">
+      <div class="lp-flag">${l.flag}</div>
+      <div><div class="lp-name">${l.label}</div><div class="lp-family">${l.family}</div></div>
+      <div class="lp-check">✓</div>
+    </div>`).join('');
+  document.getElementById('langPickerOverlay').classList.add('open');
+}
+
+function selectLang(key){
+  if(lpTarget==='from') tradFrom=key; else tradTo=key;
+  updateTradBtns();
+  closeLangPicker();
+}
+function closeLangPicker(){ document.getElementById('langPickerOverlay').classList.remove('open'); }
+
+function doTranslate(){
+  const q = document.getElementById('tradInput').value.trim().toLowerCase();
+  if(!q) return;
+  const srcField = tradFrom==='fr'?'fr':tradFrom==='en'?'en':tradFrom==='yoruba'?'yoruba':tradFrom;
+  const dstField = tradTo==='fr'?'fr':tradTo==='en'?'en':tradTo==='yoruba'?'yoruba':tradTo;
+  const found = words.find(w => (w[srcField]||'').toLowerCase().includes(q));
+  const box = document.getElementById('resultBox');
+  box.style.display='block';
+  box.className='result-box';
+  if(found && found[dstField]){
+    document.getElementById('resultWord').textContent = found[dstField];
+    document.getElementById('resultSub').textContent = `${getLangLabel(tradFrom)} → ${getLangLabel(tradTo)}`;
+    document.getElementById('resultTon').textContent = found.ton ? '🎵 Tons : '+found.ton+' · '+found.theme : found.theme;
+  } else if(found && !found[dstField]){
+    box.classList.add('no-result');
+    document.getElementById('resultWord').textContent = 'Traduction manquante';
+    document.getElementById('resultSub').textContent = 'Ce mot est dans notre base mais pas encore traduit dans cette langue.';
+    document.getElementById('resultTon').textContent = '';
+  } else {
+    box.classList.add('no-result');
+    document.getElementById('resultWord').textContent = 'Mot non trouvé';
+    document.getElementById('resultSub').textContent = 'Ce mot n\'est pas encore dans notre base. Il sera ajouté prochainement !';
+    document.getElementById('resultTon').textContent = '';
+  }
+}
+
+function initTrad(){
+  const urgences = words.filter(w=>w.theme==='Urgences').slice(0,6);
+  document.getElementById('urgList').innerHTML = urgences.map(w=>`
+    <div class="word-card" style="margin-bottom:6px;border-left-color:#EF4444" onclick="quickTrad('${w.fr.replace(/'/g,"&#39;")}')">
+      <div class="wc-main"><div class="wc-word" style="font-size:13px">${w.fr}</div><div class="wc-tr">${w.ewe}</div></div>
+      <span class="wc-arr">›</span>
+    </div>`).join('');
+}
+function quickTrad(txt){
+  tradFrom='fr'; tradTo='ewe'; updateTradBtns();
+  document.getElementById('tradInput').value=txt;
+  doTranslate();
+}
+
+// ══════════════════════════════════════════════
+// APPRENTISSAGE
+// ══════════════════════════════════════════════
+function renderLearn(){
+  // Lang picker
+  const lp = document.getElementById('learnLangPick');
+  const learnLangs = LANGS.filter(l=>!['fr','en'].includes(l.key));
+  lp.innerHTML = learnLangs.map(l=>`
+    <div class="lesson-pill ${l.key===learnLang?'active':''}" onclick="setLearnLang('${l.key}')">
+      ${l.flag} ${l.label}
+    </div>`).join('');
+
+  // Theme picker
+  const tp = document.getElementById('learnThemePick');
+  tp.innerHTML = THEMES.filter(t=>t!=='Tous').map(t=>`
+    <div class="lesson-pill ${t===learnTheme?'active':''}" onclick="setLearnTheme('${t}')">
+      ${THEME_ICO[t]} ${t}
+    </div>`).join('');
+
+  renderLessonCard();
+  buildQuiz();
+  updateXP();
+}
+
+function setLearnLang(key){
+  learnLang=key; learnIdx=0;
+  document.querySelectorAll('#learnLangPick .lesson-pill').forEach((p,i)=>{
+    const learnLangs = LANGS.filter(l=>!['fr','en'].includes(l.key));
+    p.classList.toggle('active', learnLangs[i].key===key);
+  });
+  renderLessonCard();
+}
+function setLearnTheme(t){
+  learnTheme=t; learnIdx=0;
+  document.querySelectorAll('#learnThemePick .lesson-pill').forEach(p=>{
+    p.classList.toggle('active', p.textContent.trim().includes(t));
+  });
+  renderLessonCard();
+}
+
+function getLearnWords(){
+  return words.filter(w=>w.theme===learnTheme && w[learnLang]);
+}
+
+function renderLessonCard(){
+  const ws = getLearnWords();
+  const lang = LANGS.find(l=>l.key===learnLang);
+  document.getElementById('lessonSecTitle').textContent = `📖 Leçon — ${learnTheme} en ${lang.label}`;
+
+  if(!ws.length){
+    document.getElementById('lessonDots').innerHTML='';
+    document.getElementById('lessonCardWrap').innerHTML='<div class="card" style="text-align:center;color:#94A3B8">Aucune entrée disponible pour cette combinaison.<br>Essayez une autre langue ou un autre thème.</div>';
+    document.getElementById('lessonPrevBtn').disabled=true;
+    document.getElementById('lessonNextBtn').disabled=true;
+    return;
+  }
+
+  if(learnIdx>=ws.length) learnIdx=0;
+  const w = ws[learnIdx];
+  const wordInLang = w[learnLang];
+
+  // Dots
+  document.getElementById('lessonDots').innerHTML = ws.map((_,i)=>
+    `<div class="l-dot ${i<learnIdx?'done':i===learnIdx?'cur':''}"></div>`).join('');
+
+  // Card
+  document.getElementById('lessonCardWrap').innerHTML = `
+    <div class="lesson-card-item">
+      <div class="lc-top">
+        <div class="lc-num">${learnIdx+1} / ${ws.length}</div>
+        <div class="lc-theme-badge">${THEME_ICO[w.theme]} ${w.theme}</div>
+      </div>
+      <div class="lc-word">${wordInLang}</div>
+      <div class="lc-tr">${w.fr}</div>
+      ${w.en ? `<div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${w.en}</div>` : ''}
+      <div class="lc-ton">🎵 Tons : ${w.ton}</div>
+      ${w.note ? `<div class="lc-note">📌 ${w.note}</div>` : ''}
+      <div class="lc-lang-grid">
+        ${['fr','en','ewe','kabye','mina','adja'].filter(k=>k!==learnLang && w[k]).map(k=>`
+          <div class="lc-lang-cell">
+            <div class="lc-lang-lbl">${LANGS.find(l=>l.key===k)?.label||k}</div>
+            <div class="lc-lang-val">${w[k]}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  document.getElementById('lessonPrevBtn').disabled = learnIdx===0;
+  document.getElementById('lessonNextBtn').textContent = learnIdx===ws.length-1 ? '✓ Terminé' : 'Suivant →';
+}
+
+function lessonNav(dir){
+  const ws = getLearnWords();
+  if(dir===1 && learnIdx===ws.length-1){ xp+=10; updateXP(); learnIdx=0; renderLessonCard(); return; }
+  learnIdx = Math.max(0, Math.min(ws.length-1, learnIdx+dir));
+  renderLessonCard();
+}
+
+function updateXP(){
+  document.getElementById('xpFill').style.width=Math.min(100,xp)+'%';
+  document.getElementById('xpLabel').textContent=xp+' XP';
+}
+
+// QUIZ
+function buildQuiz(){
+  const ws = getLearnWords();
+  if(!ws.length){ document.getElementById('quizCard').innerHTML='<div style="text-align:center;color:#94A3B8;padding:20px">Aucune question disponible pour cette combinaison.</div>'; return; }
+  const pool = [...ws].sort(()=>Math.random()-.5).slice(0,Math.min(10,ws.length));
+  quizState = {pool, idx:0, score:0, answered:false};
+  renderQuiz();
+}
+
+function renderQuiz(){
+  const {pool,idx,score} = quizState;
+  const card = document.getElementById('quizCard');
+  if(idx>=pool.length){
+    const pct=Math.round(score/pool.length*100);
+    card.innerHTML=`<div class="quiz-score">
+      <div class="quiz-score-ico">${pct>=80?'🏆':pct>=50?'👍':'💪'}</div>
+      <div class="quiz-score-num">${score}/${pool.length}</div>
+      <div class="quiz-score-lbl">${pct}% de bonnes réponses</div>
+      <button class="quiz-restart" onclick="buildQuiz()">Rejouer →</button>
+    </div>`;
+    xp+=score*5; updateXP(); return;
+  }
+  const w = pool[idx];
+  const wordInLang = w[learnLang];
+  const lang = LANGS.find(l=>l.key===learnLang);
+  const others = words.filter(x=>x.id!==w.id&&x.fr!==w.fr).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.fr);
+  const opts = [w.fr,...others].sort(()=>Math.random()-.5);
+  card.innerHTML=`
+    <div class="quiz-counter">Question ${idx+1}/${pool.length} · Score : ${score} · ${lang.flag} ${lang.label}</div>
+    <div class="quiz-q">Que signifie en français ?<br>
+      <span class="quiz-q-word">${wordInLang}</span>
+      <span class="quiz-q-lang">en ${lang.label}</span>
+    </div>
+    <div class="quiz-opts">${opts.map(o=>`<button class="quiz-opt" onclick="answerQuiz(this,'${o.replace(/'/g,"&#39;")}','${w.fr.replace(/'/g,"&#39;")}')">${o}</button>`).join('')}</div>
+    <div class="quiz-fb" id="quizFb"></div>
+    <button class="quiz-next" id="quizNext" onclick="nextQuiz()">Question suivante →</button>`;
+}
+
+function answerQuiz(btn,chosen,correct){
+  if(quizState.answered)return;
+  quizState.answered=true;
+  const ok=chosen===correct;
+  if(ok)quizState.score++;
+  document.querySelectorAll('.quiz-opt').forEach(b=>{
+    b.classList.add('disabled');
+    if(b.textContent===correct)b.classList.add('correct');
+    else if(b===btn&&!ok)b.classList.add('wrong');
+  });
+  const fb=document.getElementById('quizFb');
+  fb.textContent=ok?'✅ Correct ! Bravo !':'❌ La bonne réponse était : '+correct;
+  fb.className='quiz-fb show '+(ok?'ok':'ko');
+  document.getElementById('quizNext').classList.add('show');
+}
+function nextQuiz(){ quizState.idx++; quizState.answered=false; renderQuiz(); }
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+initDico();
+initTrad();
+updateTradBtns();
+</script>
+</body>
+</html>
